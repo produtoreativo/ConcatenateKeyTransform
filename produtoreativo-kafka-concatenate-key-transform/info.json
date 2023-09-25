@@ -1,0 +1,28 @@
+{
+  "name": "produtoreativo-kafka-concatenate-key-transform",
+  "description": "Concatenate Key Transform",
+  "version": "1.0.0",
+  "author": "Produto Reativo",
+  "license": [
+    {
+      "name" : "MIT License",
+      "url" : "https://github.com/produtoreativo/ConcatenateKeyTransform/blob/master/LICENSE"
+    }
+  ],
+  "kafka": {
+    "versions": "7.4.0"
+  },
+  "component_types": [
+    {
+      "name": "Custom Transform",
+      "class": "br.com.produtoreativo.kafka.transform.ConcatenateKeyTransform"
+    }
+  ],
+  "components": [
+    {
+      "name": "concatenate-key-transform",
+      "type": "Custom Transform",
+      "version": "1.0.0"
+    }
+  ]
+}
