@@ -17,47 +17,63 @@ public class ConcatenateKeyTransform<R extends ConnectRecord<R>> implements Tran
 
     @Override
     public R apply(R record) {
-        Struct keyStruct = (Struct) record.key();
-        StringBuilder newIdBuilder = new StringBuilder();
-        if (keyFieldNames.length > 0 && !keyFieldNames[0].isEmpty()) {
-          for (String fieldName : keyFieldNames) {
-              if (newIdBuilder.length() > 0) {
-                  newIdBuilder.append(delimiter);
-              }
-              Object fieldValue = keyStruct.get(fieldName);
-              newIdBuilder.append(fieldValue.toString());
-          }
-        } else {
-          Schema schema = record.keySchema();
-          for (Field field : schema.fields()) {
-            if (newIdBuilder.length() > 0) {
-                newIdBuilder.append(delimiter);
+        try {
+            Struct keyStruct = (Struct) record.key();
+
+            System.out.println("keyStruct");
+            System.out.println(keyStruct);
+
+            StringBuilder newIdBuilder = new StringBuilder();
+            if (keyFieldNames.length > 0 && !keyFieldNames[0].isEmpty()) {
+                for (String fieldName : keyFieldNames) {
+
+                    System.out.println("Fieldname");
+                    System.out.println(fieldName);
+
+
+                    if (newIdBuilder.length() > 0) {
+                        newIdBuilder.append(delimiter);
+                    }
+                    Object fieldValue = keyStruct.get(fieldName.trim());
+                    newIdBuilder.append(fieldValue.toString());
+                }
+            } else {
+                Schema schema = record.keySchema();
+                for (Field field : schema.fields()) {
+                    if (newIdBuilder.length() > 0) {
+                        newIdBuilder.append(delimiter);
+                    }
+                    Object value = keyStruct.get(field.name());
+                    newIdBuilder.append(value.toString());
+                }
             }
-            Object value = keyStruct.get(field.name());
-            newIdBuilder.append(value.toString());
-          }
+
+            String newId = newIdBuilder.toString();
+
+            Schema schemaElastic = SchemaBuilder.struct()
+                                        .name("br.com.produtoreativo")
+                                        .field("_id", Schema.STRING_SCHEMA)
+                                        .build();
+            Struct keyElastic = new Struct(schemaElastic).put("_id", newId);
+
+            R transformedRecord = record.newRecord(
+                record.topic(),
+                record.kafkaPartition(),
+                schemaElastic,
+                keyElastic,
+                record.valueSchema(),
+                record.value(),
+                record.timestamp()
+            );
+
+            transformedRecord.headers().addString("_id", newId);
+            return transformedRecord;
+        } catch (Exception e) {
+            System.out.println("Error ************");
+            System.out.println(e.getMessage());
         }
+        return null;
 
-        String newId = newIdBuilder.toString();
-
-        Schema schemaElastic = SchemaBuilder.struct()
-                                     .name("br.com.produtoreativo")
-                                     .field("_id", Schema.STRING_SCHEMA)
-                                     .build();
-         Struct keyElastic = new Struct(schemaElastic).put("_id", newId);
-
-        R transformedRecord = record.newRecord(
-            record.topic(),
-            record.kafkaPartition(),
-            schemaElastic,
-            keyElastic,
-            record.valueSchema(),
-            record.value(),
-            record.timestamp()
-        );
-
-        transformedRecord.headers().addString("_id", newId);
-        return transformedRecord;
     }
 
     @Override
